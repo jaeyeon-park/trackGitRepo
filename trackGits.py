@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+
+# Autohr: Jaeyeon park
+# Created: 2019-09-18
+# Updated: 2019-09-18
+# Note: Executable python code to add git-repo directory into the directory running git-instaweb
+#		Installer built in
+
+
 import os,pickle
 __CONFIG_NAME = "trackGits.conf"
 __INSTAWEB_DIR = "git-insta"
@@ -12,10 +20,8 @@ def isDir(directory):
 
 def isGit(directory):
 	gitdir = os.path.join(directory,'.git')
-	if os.path.isdir(gitdir):
-		return True
-	else:
-		return False
+	if os.path.isdir(gitdir): return True
+	else:return False
 	
 def isInstalled(confPath):
 	if os.path.exists(confPath):
@@ -23,32 +29,45 @@ def isInstalled(confPath):
 			confs = pickle.load(f)
 			instawebDir = confs['instawebDir']
 			
-		if isDir(instawebDir) and isGit(instawebDir):
-			return True
+		if isDir(instawebDir) and isGit(instawebDir): return True
 		else: return False
 	else: return False
 	
 def reinstall(instawebDir,conf):
-	if not isDir(instawebDir): return False
+	"""
+	reinstall(instawebDir:str,conf:str) -> return True/False (success or failure)
+	
+	Remove old instawebDir and Initialize the given instawebDir to run git-instaweb
+	Recreated configuration file
+	
+	instawebDir(str): absolute path of directory where to make 'git-insta' dir again
+	conf(str): absolute path of trakGits.conf file
+	"""
+	
+	if not isDir(instawebDir): return False #check if it is dir or  not
 
-	with open(conf,'rb') as f:
+	with open(conf,'rb') as f: #load old configuration file
 		confs = pickle.load(f)
-		oldInstalwebDir = confs['instawebDir']
-	yes = input("{} will be removed. Are you sure to continue? (y/n): ".format(oldInstalwebDir))
-	yes = yes.capitalize()
+		oldInstawebDir = confs['instawebDir']
+	yes = input("{} will be removed. Are you sure to continue? (y/n): ".format(oldInstawebDir)).capitalize()
 	if yes =="Y":
-		os.system('rm -r {}'.format(oldInstalwebDir))
-		return install(instawebDir,conf)
+		#remove oldInstawebDir
+		#then reinitialize instawebDir for git-instaweb and recreate conf file
+		os.system('rm -r {}'.format(oldInstawebDir))
+		return install(instawebDir,conf) #return success or failure from installation
 	else:
 		print("Canceled reinstallation")
-		return False
+		return False #return failure of reinstallation
 			
 def install(instawebDir,conf):
 	'''
-	install directory to run git-instaweb
+	install(instawebDir:str,conf:str) -> return True/False (success or failure)
 	
-	instawebDir(str): absolute path of directory
-	conf(str): absolute path of conf file of trackGits
+	Initialize the given instawebDir(directory) to run git-instaweb
+	Create configuration file
+	
+	instawebDir(str): absolute path of directory where to make 'git-insta' dir 
+	conf(str): absolute path of trackGits.conf file
 	'''
 	
 	#set the absolute path of conf
@@ -63,7 +82,8 @@ def install(instawebDir,conf):
 		print("Already Created: {}".format(instawebDir))
 		
 	#git-initialize and check instawebDir
-	if isGit(instawebDir): print("{} git-checked".format(instawebDir))
+	if isGit(instawebDir): 
+		print("{} git-checked".format(instawebDir))
 	else:
 		os.system('git init {}'.format(instawebDir))
 		print("git initialized: {}".format(instawebDir))
@@ -81,23 +101,37 @@ def install(instawebDir,conf):
 	return True
 	
 def addDir(dirPath, conf):
+	"""
+	addDir(dirPath:str,conf:str) -> return True/False (success or failure to add dir into instawebDir)
+	
+	Add the given directory path(dirPath) into the instawebDir defined in conf file by symbol-linking it
+	
+	dirPath(str): absolute path of directory to add into the instawebDir
+	conf(str): absolute paht of trackGits.conf file	
+	"""
+	
+	#check whether the given dir is git project or not
 	if not isDir(dirPath): return False
 	if not isGit(dirPath): return False
+	#continue if is directory and git project
 	
 	#LOAD CONFIGURATIONS
 	with open(conf,'rb') as f:
 		confs = pickle.load(f)
 		instawebDir = confs['instawebDir']
+	
 	dst = os.path.join(instawebDir,os.path.basename(dirPath))
+	#check whether dirPath was already added
 	if os.path.islink(dst):
 		print("Already added: {} -> {}".format(dirPath,dst))
 		return False
 	
+	#link dirPath to dst by soft-link
 	os.symlink(dirPath,dst)
 	modifyDesc(dirPath)
 	
 	print("{} -> {}".format(dirPath,dst))
-	if os.path.islink(dst):
+	if os.path.islink(dst): #link file is created successfully
 		print("add success")
 		return True
 	else:
@@ -105,6 +139,15 @@ def addDir(dirPath, conf):
 		return False
 	
 def modifyDesc(dirPath):
+	"""
+	modifyDesc(dirPath:str) -> return None
+	
+	Modify description of the given git-project dir(dirPath)
+	It will help user to know easily what projects are for in git-instaweb
+	
+	dirPath(str): absolute path of git-project directory. it should include '.git' directory
+	"""
+	
 	desc = os.path.join(dirPath,'.git/description')
 	with open(desc) as f:
 		print("Current Desciription for {}".format(dirPath))
@@ -116,16 +159,23 @@ def modifyDesc(dirPath):
 		with open(desc,'w') as f:
 			f.write(contents)
 			
-	
 def installView(conf,installer):
-	yes = input("Do you want to install 'trackGits'? (y/n): ")
-	yes = yes.capitalize()
+	"""
+	installView(conf:str, installer:func) -> return True/False (success or failure from installer)
+	
+	Interact with user to install or to reinstall trackGits
+	installer shoulc be specified between 'install' function or 'reinstall' function
+	
+	conf(str): absolute path of trackGits.conf file
+	installer(func): installer function. 'install' or 'reinstall'
+	"""
+	
+	yes = input("Do you want to install 'trackGits'? (y/n): ").capitalize()
 	if yes == 'Y':
 		instawebDir = input('input dir-path to run git-instaweb: ')
 		instawebDir = os.path.abspath(os.path.expanduser(instawebDir))
 		if installer(instawebDir,conf):
-			print("Success to Install\n")
-			print("start git-instaweb using below commands")
+			print("Success to Install\n\nstart git-instaweb using below commands")
 			print("-"*5)
 			print("$ cd {}".format(os.path.join(instawebDir,__INSTAWEB_DIR)))
 			print("$ git instaweb --httpd=webrick")
@@ -141,6 +191,14 @@ def installView(conf,installer):
 		return False
 	
 def main(args,conf):
+	"""
+	main(args,conf) -> return True/False (success or failure)
+	
+	Run in __main__ propery depending on args
+	
+	args(argparse.Namespace): parsed arguments by parser.parse_args() (dir,reinstall,instawebDir)
+	conf(str): absolute path of trackGits.conf
+	"""
 	if args.instawebDir:
 		with open(conf,'rb') as f:
 			confs = pickle.load(f)
@@ -171,38 +229,8 @@ if __name__ == "__main__":
 	parser.add_argument('-d','--dir',help="Directory path of git-project you want to add to git-instaweb. The default is current directory",default="")
 	parser.add_argument('--reinstall',help="Reinstall dir for git-instaweb",action="store_true",default=False)
 	parser.add_argument('-i','--instawebDir',help="show current Instaweb directory",action='store_true',default=False)
-	args = parser.parse_args()	
+	args = parser.parse_args()
 	main(args,conf)
-		
-def installTest():
-	"""
-	Test installView with install function
-	"""
-	
-	global __CONFIG_NAME, __SRC_DIR
-	conf = os.path.join(__SRC_DIR,__CONFIG_NAME)
-	
-	if not isInstalled(conf):
-		installed = installView(conf,installer=install)
-		if not installed: return False
-		else: return True
-	else:
-		return True
-
-def addTest():
-	"""
-	Test addDir function
-	"""
-	
-	global __CONFIG_NAME, __SRC_DIR
-	conf = os.path.join(__SRC_DIR,__CONFIG_NAME)
-	
-	src = input("dirpath of git project")
-	addDir(src,conf)
-	
-	
-#print(installTest())
-#print(addTest())
 
 	
 
