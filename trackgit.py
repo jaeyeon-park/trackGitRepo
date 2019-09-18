@@ -7,7 +7,7 @@
 #		Installer built in
 
 import os,pickle
-__CONFIG_NAME = "trackGits.conf"
+__CONFIG_NAME = "trackgit.conf"
 __INSTAWEB_DIR = "git-insta"
 __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 __ALIAS = 'trackgit'
@@ -130,7 +130,7 @@ def installView(conf,installer):
 	installer(func): installer function. 'install' or 'reinstall'
 	"""
 	
-	yes = input("Do you want to install 'trackGits'? (y/n): ").capitalize()
+	yes = input("Do you want to install 'trackgit'? (y/n): ").capitalize()
 	if yes == 'Y':
 		instawebDir = input('input dir-path to run git-instaweb: ')
 		instawebDir = os.path.abspath(os.path.expanduser(instawebDir))
@@ -218,7 +218,8 @@ def modifyDesc(dirPath):
 		contents = input("Description for {}\n : ".format(dirPath))
 		with open(desc,'w') as f:
 			f.write(contents)
-			
+	else:
+		print("Skip modifying description")
 
 def main(args,conf):
 	"""
