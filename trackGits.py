@@ -6,11 +6,11 @@
 # Note: Executable python code to add git-repo directory into the directory running git-instaweb
 #		Installer built in
 
-
 import os,pickle
 __CONFIG_NAME = "trackGits.conf"
 __INSTAWEB_DIR = "git-insta"
 __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+__ALIAS = 'trackgit'
 
 def isDir(directory):
 	if os.path.isdir(directory): return True
@@ -23,6 +23,9 @@ def isGit(directory):
 	if os.path.isdir(gitdir): return True
 	else:return False
 	
+	
+############# FOR INSTALLER #############
+
 def isInstalled(confPath):
 	if os.path.exists(confPath):
 		with open(confPath,'rb') as f:
@@ -98,7 +101,60 @@ def install(instawebDir,conf):
 		confs['instawebDir'] = instawebDir
 		pickle.dump(confs,f)
 		print("generate: {}".format(conf))
+		
+	#REGISETER ALIAS IN RC-FILE
+	rcfiles = set(['.bashrc','.zshrc'])
+	homedir = os.path.expanduser('~/')
+	rcfile = [ os.path.join(homedir,f) for f in os.listdir(homedir) if f in rcfiles ]
+	for f in rcfile:
+		with open(f,'a') as f:
+			f.write('alias {}="{}"\n'.format(__ALIAS, os.path.abspath(__file__)))
+		
+	print("\nRun below commands")
+	print("-"*5)
+	for f in rcfile:
+		print("$source {}".format(f))
+	print("-"*5)
+		
 	return True
+
+
+def installView(conf,installer):
+	"""
+	installView(conf:str, installer:func) -> return True/False (success or failure from installer)
+	
+	Interact with user to install or to reinstall trackGits
+	installer shoulc be specified between 'install' function or 'reinstall' function
+	
+	conf(str): absolute path of trackGits.conf file
+	installer(func): installer function. 'install' or 'reinstall'
+	"""
+	
+	yes = input("Do you want to install 'trackGits'? (y/n): ").capitalize()
+	if yes == 'Y':
+		instawebDir = input('input dir-path to run git-instaweb: ')
+		instawebDir = os.path.abspath(os.path.expanduser(instawebDir))
+		if installer(instawebDir,conf):
+			print("\nStart git-instaweb using below commands")
+			print("-"*5)
+			print("$ cd {}".format(os.path.join(instawebDir,__INSTAWEB_DIR)))
+			print("$ git instaweb --httpd=webrick")
+			print("-"*5)
+			print("Success to install")
+			return True
+		else:
+			print("Fail to Install")
+			return False
+	elif yes == 'N':
+		print('Canceled installation')
+		return False
+	else:
+		print("Wrong user input. not (y/n)")
+		return False
+	
+
+
+############# FOR ADDDIR #############
 	
 def addDir(dirPath, conf):
 	"""
@@ -111,8 +167,12 @@ def addDir(dirPath, conf):
 	"""
 	
 	#check whether the given dir is git project or not
-	if not isDir(dirPath): return False
-	if not isGit(dirPath): return False
+	if not isDir(dirPath):
+		print("Not dir: {}".format(dirPath))
+		return False
+	if not isGit(dirPath):
+		print("Not git-repo: {}".format(dirPath))
+		return False
 	#continue if is directory and git project
 	
 	#LOAD CONFIGURATIONS
@@ -159,37 +219,7 @@ def modifyDesc(dirPath):
 		with open(desc,'w') as f:
 			f.write(contents)
 			
-def installView(conf,installer):
-	"""
-	installView(conf:str, installer:func) -> return True/False (success or failure from installer)
-	
-	Interact with user to install or to reinstall trackGits
-	installer shoulc be specified between 'install' function or 'reinstall' function
-	
-	conf(str): absolute path of trackGits.conf file
-	installer(func): installer function. 'install' or 'reinstall'
-	"""
-	
-	yes = input("Do you want to install 'trackGits'? (y/n): ").capitalize()
-	if yes == 'Y':
-		instawebDir = input('input dir-path to run git-instaweb: ')
-		instawebDir = os.path.abspath(os.path.expanduser(instawebDir))
-		if installer(instawebDir,conf):
-			print("Success to Install\n\nstart git-instaweb using below commands")
-			print("-"*5)
-			print("$ cd {}".format(os.path.join(instawebDir,__INSTAWEB_DIR)))
-			print("$ git instaweb --httpd=webrick")
-			return True
-		else:
-			print("Fail to Install")
-			return False
-	elif yes == 'N':
-		print('Canceled installation')
-		return False
-	else:
-		print("Wrong user input. not (y/n)")
-		return False
-	
+
 def main(args,conf):
 	"""
 	main(args,conf) -> return True/False (success or failure)
