@@ -229,16 +229,27 @@ def main(args,conf):
 	args(argparse.Namespace): parsed arguments by parser.parse_args() (dir,reinstall,instawebDir)
 	conf(str): absolute path of trackGits.conf
 	"""
-	if args.instawebDir:
+	
+	if args.list or args.instawebDir:
 		with open(conf,'rb') as f:
 			confs = pickle.load(f)
-		print("{}".format(confs['instawebDir']))
-		return True	
+		instawebDir = confs['instawebDir']
+		if args.list:
+			dirs = [f for f in os.listdir(instawebDir) if not f.startswith('.')]
+			for f in dirs:
+				print(f)
+			return True
+		elif args.instwebDir:
+			print(instawebDir)
+			return True
+		else:
+			return False
 	
 	if args.reinstall:
 		installed = installView(conf,installer=reinstall)
 		if not installed: return False
 		else: return True
+		
 	if args.dir == "" : dirPath = os.curdir
 	else: dirPath = args.dir
 	dirPath = os.path.abspath(dirPath)
@@ -259,6 +270,7 @@ if __name__ == "__main__":
 	parser.add_argument('-d','--dir',help="Directory path of git-project you want to add to git-instaweb. The default is current directory",default="")
 	parser.add_argument('--reinstall',help="Reinstall dir for git-instaweb",action="store_true",default=False)
 	parser.add_argument('-i','--instawebDir',help="show current Instaweb directory",action='store_true',default=False)
+	parser.add_argument('-l','--list',help="list git-repos added into the git-instaweb directory",action='store_true',default=False)
 	args = parser.parse_args()
 	main(args,conf)
 
